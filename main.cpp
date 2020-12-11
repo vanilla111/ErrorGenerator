@@ -8,8 +8,9 @@ int main() {
     ofstream logBuf("/var/error_generator.log");
     streambuf *oldCoutBuf = cout.rdbuf(logBuf.rdbuf());
     streambuf *oldCerrBuf = cerr.rdbuf(logBuf.rdbuf());
-    std::cout << "Hello, World!" << std::endl;
 
+    Memory* memory = new Memory(GenerateType::HIGH_LEVEL, ErrorType::NORMAL);
+    memory->generateError();
     cout.rdbuf(oldCoutBuf);
     cerr.rdbuf(oldCerrBuf);
     return 0;

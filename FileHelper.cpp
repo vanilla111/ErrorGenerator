@@ -26,7 +26,7 @@ void FileHelper::write(const std::string &file_name, T content, bool overwrite) 
     fop.close();
 }
 
-void FileHelper::readProcMemInfo(vector<int> &result) {
+void FileHelper::readProcMemInfo(vector<long> &result) {
     FILE *file = fopen("/proc/meminfo","r");
     if (file == nullptr) {
         cerr << "[FileHelper::readProcMemInfo]文件打开失败" << endl;
@@ -34,23 +34,23 @@ void FileHelper::readProcMemInfo(vector<int> &result) {
     }
     char tmp[50];
     fscanf(file, "MemTotal: %s kB\n", tmp);
-    int mem_total = atol(tmp);
+    long mem_total = atol(tmp) * 1024;
     fscanf(file, "MemFree: %s kB\n", tmp);
-    int mem_free = atol(tmp);
+    long mem_free = atol(tmp) * 1024;
     fscanf(file, "%s", tmp);
     fscanf(file, "%s kB\n", tmp);
     fscanf(file, "Buffers: %s kB\n", tmp);
-    int mem_buff = atol(tmp);
+    long mem_buff = atol(tmp) * 1024;
     fscanf(file, "Cached: %s kB\n", tmp);
-    int mem_cache = atol(tmp);
+    long mem_cache = atol(tmp) * 1024;
     for (int i = 0; i < 9; ++i) {
         fscanf(file, "%s", tmp);
         fscanf(file, "%s kB\n", tmp);
     }
     fscanf(file, "SwapTotal: %s kB\n", tmp);
-    int swap_total = atol(tmp);
+    long swap_total = atol(tmp) * 1024;
     fscanf(file, "SwapFree: %s kB\n", tmp);
-    int swap_free = atol(tmp);
+    long swap_free = atol(tmp) * 1024;
     result.push_back(mem_total);
     result.push_back(mem_free);
     result.push_back(mem_buff);

@@ -30,14 +30,18 @@ private:
     float down_rate;
     // 已分配内存指针容器
     vector<char*> pointer_container;
-    // 可使用内存(phy + swap) byte
-    int available_mem;
     // 是否使用交换区
     bool use_swap;
+    long mem_total;
+    long mem_free;
+    long mem_buff_cache;
+    long swap_total;
+    long swap_free;
 
 public:
 
-    Memory(GenerateType t1, ErrorType t2, int continue_time, int threshold, int burst_times, bool swap);
+    Memory(GenerateType t1, ErrorType t2, int continue_time = 60,
+           int threshold = 0, int burst_times = 1, bool swap = false);
 
     ~Memory();
 
@@ -45,6 +49,13 @@ public:
 
 private:
 
+    void noAction();
+
+    void lowLevel();
+
+    void highLevel();
+
+    void takeMemAndKeep();
 
 };
 
