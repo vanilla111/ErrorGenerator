@@ -1,9 +1,8 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.10)
 project(ErrorGenerator)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 
-add_executable(ErrorGenerator
-        Memory.cpp
-        FileHelper.cpp
-        main.cpp)
+aux_source_directory(. DIR_SRC)
+
+add_executable(ErrorGenerator ${DIR_SRC})

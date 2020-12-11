@@ -9,7 +9,7 @@ int main() {
     streambuf *oldCoutBuf = cout.rdbuf(logBuf.rdbuf());
     streambuf *oldCerrBuf = cerr.rdbuf(logBuf.rdbuf());
 
-    Memory* memory = new Memory(GenerateType::HIGH_LEVEL, ErrorType::NORMAL);
+    auto* memory = new Memory(GenerateType::HIGH_LEVEL, ErrorType::NORMAL, 120);
     memory->generateError();
     cout.rdbuf(oldCoutBuf);
     cerr.rdbuf(oldCerrBuf);

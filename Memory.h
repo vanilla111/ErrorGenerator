@@ -10,8 +10,6 @@
 #include "ErrorType.h"
 #include "GenerateType.h"
 
-using namespace std;
-
 class Memory {
 private:
     // 占用内存阀值
@@ -29,7 +27,7 @@ private:
     // 降低速率
     float down_rate;
     // 已分配内存指针容器
-    vector<char*> pointer_container;
+    std::vector<char*> pointer_container;
     // 是否使用交换区
     bool use_swap;
     long mem_total;
@@ -56,6 +54,14 @@ private:
     void highLevel();
 
     void takeMemAndKeep();
+
+    void steadyUpAndKeep();
+
+    void steadyUpAndDown();
+
+    void burst();
+
+    void burstWithFrequency();
 
 };
 

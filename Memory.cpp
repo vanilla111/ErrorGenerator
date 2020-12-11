@@ -6,6 +6,7 @@
 #include <vector>
 #include <thread>
 #include <iostream>
+#include <string.h>
 
 using namespace std;
 
@@ -48,13 +49,17 @@ void Memory::generateError() {
             break;
         case STEADY_UP_AND_KEEP:
             // 达到阀值后继续保持
+            steadyUpAndKeep();
             break;
         case STEADY_UP_THEN_DOWN:
             // 达到阀值后再缓慢下降
+            steadyUpAndDown();
             break;
         case BURST:
+            burst();
             break;
         case BURST_WITH_FREQUENCY:
+            burstWithFrequency();
             break;
     }
 }
@@ -75,19 +80,34 @@ void Memory::lowLevel() {
 }
 
 void Memory::highLevel() {
-    this->threshold = 80;
+    this->threshold = 90;
     takeMemAndKeep();
 }
 
 void Memory::takeMemAndKeep() {
-    assert(threshold > 0 && threshold < 100);
     long except = mem_total * (threshold * 1.0 / 100);
     long used = mem_total - mem_free - mem_buff_cache;
     if (used < except) {
-        int malloc_size = except - used;
+        long malloc_size = except - used;
         char *p = (char*)malloc(malloc_size);
         memset(p, 0, malloc_size);
         pointer_container.push_back(p);
     }
     noAction();
+}
+
+void Memory::steadyUpAndKeep() {
+
+}
+
+void Memory::steadyUpAndDown() {
+
+}
+
+void Memory::burst() {
+
+}
+
+void Memory::burstWithFrequency() {
+
 }
