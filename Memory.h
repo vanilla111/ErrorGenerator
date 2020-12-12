@@ -30,6 +30,7 @@ private:
     std::vector<char*> pointer_container;
     // 是否使用交换区
     bool use_swap;
+    // phy + (swap if use swap)
     long mem_total;
     long mem_free;
     long mem_buff_cache;
@@ -47,21 +48,29 @@ public:
 
 private:
 
-    void noAction();
+    static void noAction(int seconds);
 
     void lowLevel();
 
     void highLevel();
 
-    void takeMemAndKeep();
+    void keepSteadyLevel();
+
+    bool takeMemAndKeep(long mem_size, int keep_time);
 
     void steadyUpAndKeep();
 
     void steadyUpAndDown();
 
-    void burst();
+    void steadyUp();
+
+    void burst(int interval);
 
     void burstWithFrequency();
+
+    void clearAll();
+
+    bool initMemInfo();
 
 };
 

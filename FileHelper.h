@@ -42,10 +42,11 @@ void FileHelper::write(const char* file_name, T content, bool overwrite) {
 }
 
 void FileHelper::readProcMemInfo(vector<long> &result) {
+    result.clear();
     FILE *file = fopen("/proc/meminfo","r");
     if (file == nullptr) {
         cerr << "[FileHelper::readProcMemInfo]文件打开失败" << endl;
-        result.clear();
+        return;
     }
     char tmp[50];
     fscanf(file, "MemTotal: %s kB\n", tmp);
