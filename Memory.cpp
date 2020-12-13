@@ -4,6 +4,7 @@
 #include "Memory.h"
 #include "FileHelper.h"
 #include <vector>
+#include <map>
 #include <thread>
 #include <iostream>
 #include <random>
@@ -22,10 +23,11 @@ Memory::Memory(GenerateType t1, ErrorType t2, int continue_time,
     this->threshold = threshold > 95 ? 95 : threshold;
     this->burst_times = burst_times;
     this->use_swap = swap;
+    this->i_take = 0;
 }
 
 void Memory::generateError() {
-    if (!initMemInfo()) {
+    if (!readMemInfo()) {
         this->generate_type = NO_ACTION;
         this->error_type = NORMAL;
     }
@@ -39,7 +41,7 @@ void Memory::generateError() {
             lowLevel();
             break;
         case HIGH_LEVEL:
-            // 维持在80%左右
+            // 维持在90%左右
             highLevel();
             break;
         case STEADY_UP_AND_KEEP:
@@ -95,7 +97,8 @@ bool Memory::takeMemAndKeep(long mem_size, int keep_time) {
         char *p = (char *) malloc(mem_size);
         if (p != nullptr) {
             memset(p, 0, mem_size);
-            pointer_container.push_back(p);
+            pointer_container.insert({p, mem_size});
+            i_take += mem_size;
         } else {
             cerr << "[Memory::takeMemAndKeep]分配内存失败" << endl;
             result = false;
@@ -109,8 +112,10 @@ bool Memory::takeMemAndKeep(long mem_size, int keep_time) {
 
 void Memory::steadyUpAndKeep() {
     // 三段式，保持水平->稳步上升->保持水平
-    steadyUp();
-    noAction();
+    int used_time = steadyUp();
+    if (used_time < continue_time) {
+        noAction(continue_time - used_time);
+    }
 }
 
 void Memory::steadyUpAndDown() {
@@ -118,20 +123,56 @@ void Memory::steadyUpAndDown() {
     steadyUp();
 }
 
-void Memory::steadyUp() {
-
-
+int Memory::steadyUp() {
+    random_device rd;
+    default_random_engine gen(rd());
+    uniform_int_distribution<unsigned> distrib(1, 3);
+    double use_threshold = threshold * 1.0 / 100;
+    double free_threshold = 1 - use_threshold;
+    time_t start_time = time(nullptr);
+    int except_use_time = continue_time * 0.4;
+    while ((mem_free + mem_buff_cache) > (long)(mem_total * free_threshold)) {
+        // 计算本次循环需要分配的内存
+        int used_time = static_cast<int> (time(nullptr) - start_time);
+        long except = mem_total * use_threshold;
+        long used = mem_total - mem_free - mem_buff_cache;
+        if (used_time >= except_use_time) {
+            // 直接分配到阀值
+            long malloc_size = except - used;
+            takeMemAndKeep(malloc_size, distrib(gen));
+        } else {
+            // 剩余内存 / 剩余时间
+            int remain_time = except_use_time - used_time;
+            if (except - used > remain_time) {
+                long malloc_size = (except - used) / remain_time;
+                takeMemAndKeep(malloc_size, 1);
+            } else {
+                // 这意味着每秒分配1字节不到
+                break;
+            }
+        }
+        if (!readMemInfo()) {
+            cerr << "[Memory::steadyUp]更新内存信息错误，提前退出" << endl;
+            break;
+        }
+    }
+    return static_cast<int> (time(nullptr) - start_time);
 }
 
 void Memory::burst(int interval) {
-    // 随机选取一个时间点，短时间内以20%的占用速度递增到阀值
+    // 随机选取一个时间点，短时间快速占用内存递增到阀值
     // 维持3秒后迅速降低
     if (interval < 11) return;
     time_t now = time(nullptr);
-    default_random_engine e(now);
-    uniform_int_distribution<unsigned> u(1, (interval - 10));
-    int sleep_time = u(e);
+    random_device rd;
+    default_random_engine gen(rd());
+    uniform_int_distribution<unsigned> distrib(1, (interval - 10));
+    int sleep_time = distrib(gen);
     noAction(sleep_time);
+    if (sleep_time > 60) {
+        // 如果读取内存信息后超过一分钟，在计算前重新读取
+        readMemInfo();
+    }
     long except_use = mem_total * (threshold * 1.0 / 100);
     long current_use = mem_total - mem_free - mem_buff_cache;
     long diff = except_use - current_use;
@@ -152,23 +193,20 @@ void Memory::burst(int interval) {
     }
     noAction(3);
     clearAll();
-    time_t remain = time(nullptr) - now;
+    int remain = static_cast<int> (time(nullptr) - now);
     if (remain < interval) {
-        noAction((int)(interval - remain));
+        noAction(interval - remain);
     }
 }
 
 void Memory::burstWithFrequency() {
-    // 每12-20秒触发一次burst
-    time_t now = time(nullptr);
-    default_random_engine e(now);
-    uniform_int_distribution<unsigned> u(12, 20);
+    int interval = continue_time / burst_times;
+    if (interval < 12) interval = 12;
     int used_time = 0;
     while (used_time < continue_time) {
-        int interval = u(e);
         burst(interval);
         used_time += interval;
-        if (!initMemInfo()) {
+        if (!readMemInfo()) {
             cerr << "[Memory::burstWithFrequency]按频率突发型占用内存失败" << endl;
             break;
         }
@@ -176,14 +214,15 @@ void Memory::burstWithFrequency() {
 }
 
 void Memory::clearAll() {
-    while (!pointer_container.empty()) {
-        char* p = pointer_container.back();
-        pointer_container.pop_back();
-        free(p);
+    map<char*, long>::iterator iter;
+    for (iter = pointer_container.begin(); iter != pointer_container.end(); iter++) {
+        free(iter->first);
     }
+    pointer_container.clear();
+    i_take = 0;
 }
 
-bool Memory::initMemInfo() {
+bool Memory::readMemInfo() {
     int max_retry_times = 5;
     vector<long> mem_info;
     for (int i = 0; i < max_retry_times; i++) {

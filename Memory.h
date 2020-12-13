@@ -6,6 +6,7 @@
 #define ERRORGENERATOR_MEMORY_H
 
 #include <vector>
+#include <map>
 
 #include "ErrorType.h"
 #include "GenerateType.h"
@@ -22,12 +23,8 @@ private:
     ErrorType error_type;
     // 如果是按频率生成，计算频次
     int burst_times;
-    // 内存占用增长速率
-    float up_rate;
-    // 降低速率
-    float down_rate;
     // 已分配内存指针容器
-    std::vector<char*> pointer_container;
+    std::map<char*, long> pointer_container;
     // 是否使用交换区
     bool use_swap;
     // phy + (swap if use swap)
@@ -36,6 +33,7 @@ private:
     long mem_buff_cache;
     long swap_total;
     long swap_free;
+    long i_take;
 
 public:
 
@@ -62,7 +60,7 @@ private:
 
     void steadyUpAndDown();
 
-    void steadyUp();
+    int steadyUp();
 
     void burst(int interval);
 
@@ -70,7 +68,7 @@ private:
 
     void clearAll();
 
-    bool initMemInfo();
+    bool readMemInfo();
 
 };
 
