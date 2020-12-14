@@ -68,7 +68,9 @@ Memory::~Memory() {
 }
 
 void Memory::noAction(int seconds) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(seconds * 1000));
+    if (seconds > 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(seconds * 1000));
+    }
 }
 
 void Memory::lowLevel() {
@@ -120,7 +122,29 @@ void Memory::steadyUpAndKeep() {
 
 void Memory::steadyUpAndDown() {
     // 四段式，保持水平->稳步上升->保持水平->逐步下降
-    steadyUp();
+    int used_time = steadyUp();
+    int sleep_time = continue_time * 0.3;
+    noAction(sleep_time);
+    used_time += sleep_time;
+    random_device rd;
+    default_random_engine gen(rd());
+    uniform_int_distribution<unsigned> distrib(0, 9);
+    map<char*, long>::iterator iter;
+    bool time_used_up = false;
+    for (iter = pointer_container.begin(); iter != pointer_container.end(); iter++) {
+        free(iter->first);
+        sleep_time = 1;
+        if (!time_used_up && distrib(gen) < 4) {
+            // 40%的概率睡眠久一点
+            sleep_time += 1;
+        }
+        noAction(sleep_time);
+        used_time += used_time;
+        time_used_up = used_time > continue_time;
+    }
+    if (used_time < continue_time) {
+        noAction(continue_time - used_time);
+    }
 }
 
 int Memory::steadyUp() {
