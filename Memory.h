@@ -44,9 +44,17 @@ public:
 
     void generateError();
 
+    void useSwap(bool flag);
+
+    void setContinueTime(int time);
+
+    void setThreshold(int hold);
+
 private:
 
     static void noAction(int seconds);
+
+    void constantTake();
 
     void lowLevel();
 
@@ -60,7 +68,7 @@ private:
 
     void steadyUpAndDown();
 
-    int steadyUp();
+    int steadyUp(int except_use_time);
 
     void burst(int interval);
 

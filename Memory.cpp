@@ -30,6 +30,7 @@ void Memory::generateError() {
     if (!readMemInfo()) {
         this->generate_type = NO_ACTION;
         this->error_type = NORMAL;
+        this->continue_time = 1;
     }
     FileHelper::write(error_label_output_path, this->error_type, true);
     switch (this->generate_type) {
@@ -58,6 +59,9 @@ void Memory::generateError() {
         case BURST_WITH_FREQUENCY:
             burstWithFrequency();
             break;
+        case CONSTANT_TAKE:
+            constantTake();
+            break;
     }
 }
 
@@ -71,6 +75,23 @@ void Memory::noAction(int seconds) {
     if (seconds > 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(seconds * 1000));
     }
+}
+
+void Memory::constantTake() {
+    // 每隔一秒申请%1的内存空间
+    long malloc_size = this->mem_total * 0.01;
+    for (int i = 0; i < 100; i++) {
+        if (mem_free + mem_buff_cache > malloc_size) {
+            takeMemAndKeep(malloc_size, 1);
+        } else {
+            noAction(1);
+        }
+        readMemInfo();
+    }
+//    int used_time = steadyUp(continue_time);
+//    if (used_time < continue_time) {
+//        noAction(continue_time - used_time);
+//    }
 }
 
 void Memory::lowLevel() {
@@ -114,7 +135,7 @@ bool Memory::takeMemAndKeep(long mem_size, int keep_time) {
 
 void Memory::steadyUpAndKeep() {
     // 三段式，保持水平->稳步上升->保持水平
-    int used_time = steadyUp();
+    int used_time = steadyUp(this->continue_time * 0.4);
     if (used_time < continue_time) {
         noAction(continue_time - used_time);
     }
@@ -122,7 +143,7 @@ void Memory::steadyUpAndKeep() {
 
 void Memory::steadyUpAndDown() {
     // 四段式，保持水平->稳步上升->保持水平->逐步下降
-    int used_time = steadyUp();
+    int used_time = steadyUp(this->continue_time * 0.4);
     int sleep_time = continue_time * 0.3;
     noAction(sleep_time);
     used_time += sleep_time;
@@ -147,14 +168,13 @@ void Memory::steadyUpAndDown() {
     }
 }
 
-int Memory::steadyUp() {
+int Memory::steadyUp(int except_use_time) {
     random_device rd;
     default_random_engine gen(rd());
     uniform_int_distribution<unsigned> distrib(1, 3);
     double use_threshold = threshold * 1.0 / 100;
     double free_threshold = 1 - use_threshold;
     time_t start_time = time(nullptr);
-    int except_use_time = continue_time * 0.4;
     while ((mem_free + mem_buff_cache) > (long)(mem_total * free_threshold)) {
         // 计算本次循环需要分配的内存
         int used_time = static_cast<int> (time(nullptr) - start_time);
@@ -270,4 +290,16 @@ bool Memory::readMemInfo() {
         this->mem_free += this->swap_free;
     }
     return true;
+}
+
+void Memory::useSwap(bool flag) {
+    this->use_swap = flag;
+}
+
+void Memory::setContinueTime(int time) {
+    this->continue_time = time;
+}
+
+void Memory::setThreshold(int hold) {
+    this->threshold = hold > 95 ? 95 : hold;
 }
