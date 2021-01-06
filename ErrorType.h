@@ -9,6 +9,6 @@ enum ErrorType {
     NORMAL, MEMORY_LEAK, MEM_ANOMAL_WITH_CPU, MEM_ANOMAL_WITH_NETWORK, MEM_ANOMAL_WITH_DISK, SERIOUS
 };
 
-static const char* error_label_output_path = "/etc/collector/label.txt";
+static const char* error_label_output_path = "/tmp/label.txt";
 
 #endif //ERRORGENERATOR_ERRORTYPE_H
