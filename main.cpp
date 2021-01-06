@@ -9,10 +9,10 @@ void exitHandler() {
 }
 
 int main() {
-    //atexit(exitHandler);
-    Memory* memory = nullptr;
-    memory = new Memory(GenerateType::CONSTANT_TAKE, ErrorType::MEMORY_LEAK);
-    memory->useSwap(true);
+
+    atexit(exitHandler);
+
+    Memory* memory = new Memory(GenerateType::CONSTANT_TAKE, ErrorType::MEMORY_LEAK);
     memory->generateError();
     delete memory;
 

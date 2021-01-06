@@ -19,7 +19,7 @@ Memory::Memory(GenerateType t1, ErrorType t2, int continue_time,
     this->error_type = t2;
     // 持续时间至少30s
     this->continue_time = continue_time < 30 ? 30 : continue_time;
-    // 阀值最高为10%-95%
+    // 阀值最高为95%
     this->threshold = threshold > 95 ? 95 : threshold;
     this->burst_times = burst_times;
     this->use_swap = swap;
@@ -175,15 +175,17 @@ int Memory::steadyUp(int except_use_time) {
     double use_threshold = threshold * 1.0 / 100;
     double free_threshold = 1 - use_threshold;
     time_t start_time = time(nullptr);
-    while ((mem_free + mem_buff_cache) > (long)(mem_total * free_threshold)) {
+    long except_free = mem_total * free_threshold;
+    long except = mem_total * use_threshold;
+    while ((mem_free + mem_buff_cache) > except_free) {
         // 计算本次循环需要分配的内存
         int used_time = static_cast<int> (time(nullptr) - start_time);
-        long except = mem_total * use_threshold;
         long used = mem_total - mem_free - mem_buff_cache;
         if (used_time >= except_use_time) {
             // 直接分配到阀值
             long malloc_size = except - used;
             takeMemAndKeep(malloc_size, distrib(gen));
+            break;
         } else {
             // 剩余内存 / 剩余时间
             int remain_time = except_use_time - used_time;
@@ -276,6 +278,7 @@ bool Memory::readMemInfo() {
                 cerr << "[Memory::generateError]读取内存使用数据失败" << endl;
                 return false;
             }
+            noAction(1);
         } else {
             break;
         }

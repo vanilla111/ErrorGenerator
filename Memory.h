@@ -38,7 +38,7 @@ private:
 public:
 
     Memory(GenerateType t1, ErrorType t2, int continue_time = 60,
-           int threshold = 0, int burst_times = 1, bool swap = false);
+           int threshold = 60, int burst_times = 1, bool swap = false);
 
     ~Memory();
 
